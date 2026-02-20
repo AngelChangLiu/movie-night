@@ -27,6 +27,14 @@
       overflow:hidden;
     }
 
+    /* Hearts behind content; content above; confetti top */
+    #heartsLayer{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index: 1;
+      display:none;
+    }
     .wrap{
       min-height:100vh;
       display:flex;
@@ -35,6 +43,13 @@
       padding:24px;
       position:relative;
       z-index: 2;
+    }
+    #confetti{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index: 99998;
+      display:none;
     }
 
     .card{
@@ -103,6 +118,8 @@
       transition: transform .08s ease, left .18s ease, top .18s ease;
       user-select:none;
       box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+      position: relative;
+      z-index: 99999; /* ALWAYS above layers */
     }
     button:active{ transform: scale(0.98); }
 
@@ -129,37 +146,30 @@
     .scene{ display:none; }
     .scene.active{ display:block; }
 
-    /* fade transitions */
-    .fade{ animation: fadeIn 0.7s ease forwards; }
-    .fadeOut{ animation: fadeOut 0.7s ease forwards; }
+    /* slower fade transitions */
+    .fade{ animation: fadeIn 1.3s ease forwards; }
+    .fadeOut{ animation: fadeOut 1.3s ease forwards; }
     @keyframes fadeIn{
-      from{ opacity:0; transform: translateY(6px); }
+      from{ opacity:0; transform: translateY(10px); }
       to{ opacity:1; transform: translateY(0); }
     }
     @keyframes fadeOut{
       from{ opacity:1; transform: translateY(0); }
-      to{ opacity:0; transform: translateY(-6px); }
+      to{ opacity:0; transform: translateY(-10px); }
     }
 
-    /* hearts layer */
-    #heartsLayer{
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      z-index: 1;
-      display:none;
-    }
+    /* slower hearts */
     .heart{
       position:absolute;
       font-size: 18px;
       opacity:0;
-      animation: floatHeart 3.2s ease-in forwards;
+      animation: floatHeart 7.5s ease-in forwards;
       filter: drop-shadow(0 10px 14px rgba(0,0,0,0.20));
     }
     @keyframes floatHeart{
       0%   { transform: translateY(0) scale(0.9); opacity:0; }
-      15%  { opacity:0.95; }
-      100% { transform: translateY(-160px) scale(1.25); opacity:0; }
+      18%  { opacity:0.95; }
+      100% { transform: translateY(-260px) scale(1.35); opacity:0; }
     }
 
     /* Trivia layout */
@@ -185,6 +195,7 @@
       transform: translateX(-50%);
       background: rgba(255,255,255,0.92);
       color:#b0125f;
+      z-index: 99999;
     }
     #aBtn{ top: 16px; }
     #bBtn{ top: 92px; }
@@ -205,15 +216,7 @@
       top: 10px;
       background: rgba(255,255,255,0.75);
       color:#b0125f;
-    }
-
-    /* confetti */
-    #confetti{
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      z-index: 3;
-      display:none;
+      z-index: 99999;
     }
   </style>
 </head>
@@ -240,6 +243,13 @@
         <div class="small">🐊💕 (Ask me for the code)</div>
       </div>
 
+      <!-- SCENE 1.5: TRIVIA INTRO -->
+      <div id="sceneIntro" class="scene">
+        <div class="croc">🐊 💕 🐊</div>
+        <h1>Okay we're going to play a little game (Trivia!)</h1>
+        <div class="small">tap to continue</div>
+      </div>
+
       <!-- SCENE 2: TRIVIA - Q ONLY -->
       <div id="sceneQOnly" class="scene">
         <div class="croc">🐊 💕 🐊</div>
@@ -255,6 +265,7 @@
           <button class="answerBtn" id="bBtn"></button>
         </div>
         <div class="hint" id="triviaHint"></div>
+        <div class="small">tap an answer</div>
       </div>
 
       <!-- SCENE 4: THANK YOU + GATE 2 -->
@@ -326,6 +337,7 @@
     const heartsLayer = document.getElementById("heartsLayer");
 
     const sceneGate1 = document.getElementById("sceneGate1");
+    const sceneIntro = document.getElementById("sceneIntro");
     const sceneQOnly = document.getElementById("sceneQOnly");
     const sceneQAnswers = document.getElementById("sceneQAnswers");
     const sceneGate2 = document.getElementById("sceneGate2");
@@ -340,7 +352,6 @@
     const aBtn = document.getElementById("aBtn");
     const bBtn = document.getElementById("bBtn");
     const triviaHint = document.getElementById("triviaHint");
-    const answersArea = document.getElementById("answersArea");
 
     const codeInput2 = document.getElementById("codeInput2");
     const enterBtn2 = document.getElementById("enterBtn2");
@@ -352,7 +363,7 @@
     const movieHint = document.getElementById("movieHint");
 
     // Scene helpers
-    const scenes = [sceneGate1, sceneQOnly, sceneQAnswers, sceneGate2, sceneMovie];
+    const scenes = [sceneGate1, sceneIntro, sceneQOnly, sceneQAnswers, sceneGate2, sceneMovie];
 
     function showScene(sceneEl){
       scenes.forEach(s => {
@@ -366,15 +377,15 @@
     function fadeToScene(fromEl, toEl){
       fromEl.classList.remove("fade");
       fromEl.classList.add("fadeOut");
-      setTimeout(() => showScene(toEl), 650);
+      setTimeout(() => showScene(toEl), 1250); // slower
     }
 
-    // Hearts
+    // Hearts (slower + fewer)
     let heartsTimer = null;
     function startHearts(){
       heartsLayer.style.display = "block";
       if(heartsTimer) clearInterval(heartsTimer);
-      heartsTimer = setInterval(spawnHeart, 220);
+      heartsTimer = setInterval(spawnHeart, 650); // MUCH slower
     }
     function spawnHeart(){
       const heart = document.createElement("div");
@@ -388,7 +399,7 @@
       heart.style.top = `${y}px`;
       heart.style.fontSize = `${size}px`;
       heartsLayer.appendChild(heart);
-      setTimeout(() => heart.remove(), 3400);
+      setTimeout(() => heart.remove(), 8200);
     }
 
     // Gate 1
@@ -404,11 +415,11 @@
       if(entered === SECRET_CODE_1){
         gateHint1.textContent = "";
         startHearts();
-        startTrivia();
+        fadeToScene(sceneGate1, sceneIntro);
       } else {
         const msg = `I know I'm a stupid butt face, but please ask me for the code I promise it'll be worth it`;
         gateHint1.textContent = msg;
-        setTimeout(() => resetGate1(""), 2200);
+        setTimeout(() => resetGate1(""), 2600);
       }
     }
 
@@ -418,14 +429,12 @@
     // Trivia flow
     let qi = 0;
     let stage = "only"; // "only" or "answers"
-    let dodgeEnabled = false;
-    let dodgyBtn = null;
 
     function startTrivia(){
       qi = 0;
       stage = "only";
       renderQOnly();
-      fadeToScene(sceneGate1, sceneQOnly);
+      fadeToScene(sceneIntro, sceneQOnly);
     }
 
     function renderQOnly(){
@@ -437,19 +446,23 @@
       qTopText.textContent = t.q;
       triviaHint.textContent = "";
 
-      // Put correct on A, wrong on B (simple + consistent)
+      // Correct = A, Wrong = B
       aBtn.textContent = t.correct;
       bBtn.textContent = t.wrong;
 
-      // reset positions (centered stack)
+      // reset back into card layout each time
+      aBtn.style.position = "absolute";
+      bBtn.style.position = "absolute";
       aBtn.style.left = "50%"; aBtn.style.top = "16px"; aBtn.style.transform = "translateX(-50%)";
       bBtn.style.left = "50%"; bBtn.style.top = "92px"; bBtn.style.transform = "translateX(-50%)";
-
-      dodgeEnabled = t.dodgeWrong;
-      dodgyBtn = dodgeEnabled ? bBtn : null;
+      aBtn.style.zIndex = "99999";
+      bBtn.style.zIndex = "99999";
     }
 
-    // Click/tap anywhere on Q-only screen => go to answers screen
+    // Intro tap -> Q1
+    sceneIntro.addEventListener("click", () => startTrivia());
+
+    // Q-only tap -> answers
     sceneQOnly.addEventListener("click", () => {
       if(stage !== "only") return;
       stage = "answers";
@@ -457,10 +470,9 @@
       fadeToScene(sceneQOnly, sceneQAnswers);
     });
 
-    // Dodge logic (moves around the whole visible page)
+    // Dodge for wrong answers on Q1 and Q3 (slower dodge movement)
     function moveButtonAway(btn){
-      const pad = 10;
-
+      const pad = 12;
       const rect = btn.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -471,33 +483,27 @@
       const x = pad + Math.random() * Math.max(pad, maxX);
       const y = pad + Math.random() * Math.max(pad, maxY);
 
-      // Make it "absolute to viewport"
-      btn.style.position = "fixed";
+      btn.style.position = "fixed";      // move around whole screen
       btn.style.left = `${x}px`;
       btn.style.top = `${y}px`;
       btn.style.transform = "none";
-      btn.style.zIndex = 10;
+      btn.style.zIndex = "99999";        // ALWAYS on top
     }
 
-    function attachDodge(btn){
-      // Desktop
-      btn.addEventListener("mouseenter", () => moveButtonAway(btn));
-      // Mobile
-      btn.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        moveButtonAway(btn);
-      }, {passive:false});
-    }
-
-    attachDodge(bBtn); // always attached, but only used when dodgeEnabled=true (we gate it below)
-
-    // Answer handlers
+    // Handlers
     aBtn.addEventListener("click", () => handleAnswer(true));
     bBtn.addEventListener("click", () => handleAnswer(false));
 
-    // If wrong answer is dodgy, don’t let it be clicked easily
-    bBtn.addEventListener("mouseenter", () => { if(dodgeEnabled) moveButtonAway(bBtn); });
-    bBtn.addEventListener("touchstart", (e) => { if(dodgeEnabled){ e.preventDefault(); moveButtonAway(bBtn); } }, {passive:false});
+    // Hover/touch dodge only when current question says to dodge
+    bBtn.addEventListener("mouseenter", () => {
+      if(trivia[qi].dodgeWrong) moveButtonAway(bBtn);
+    });
+    bBtn.addEventListener("touchstart", (e) => {
+      if(trivia[qi].dodgeWrong){
+        e.preventDefault();
+        moveButtonAway(bBtn);
+      }
+    }, {passive:false});
 
     function handleAnswer(isA){
       const t = trivia[qi];
@@ -505,24 +511,37 @@
 
       if(chosen === t.correct){
         triviaHint.textContent = t.rightMsg;
+
         setTimeout(() => {
           qi += 1;
+
           if(qi >= trivia.length){
-            // Finished trivia -> Gate 2
             fadeToScene(sceneQAnswers, sceneGate2);
-            setTimeout(()=>codeInput2.focus(), 700);
+            setTimeout(()=>codeInput2.focus(), 1600);
           } else {
-            // Next question -> show Q-only again
             stage = "only";
             renderQOnly();
             fadeToScene(sceneQAnswers, sceneQOnly);
           }
-        }, 1100);
+        }, 1700); // slower pace
+
       } else {
-        // If it's wrong and not dodgy, show a gentle message
+        // Special behavior for Q2 wrong answer -> restart
+        if(qi === 1){
+          triviaHint.textContent = "Just for that... we're going to restart";
+          setTimeout(() => {
+            qi = 0;
+            stage = "only";
+            renderQOnly();
+            fadeToScene(sceneQAnswers, sceneQOnly);
+          }, 2000); // slower
+          return;
+        }
+
+        // For other wrong answers that are not dodgy
         if(!t.dodgeWrong){
           triviaHint.textContent = "Try again 🐊💕";
-          setTimeout(()=> triviaHint.textContent="", 900);
+          setTimeout(()=> triviaHint.textContent="", 1500);
         }
       }
     }
@@ -535,7 +554,7 @@
         fadeToScene(sceneGate2, sceneMovie);
       } else {
         gateHint2.textContent = "Nopeee 🐊 try again";
-        setTimeout(()=>{ gateHint2.textContent=""; codeInput2.focus(); }, 900);
+        setTimeout(()=>{ gateHint2.textContent=""; codeInput2.focus(); }, 1400);
       }
     }
 
@@ -546,7 +565,7 @@
     function moveNoButton(){
       const areaRect = movieArea.getBoundingClientRect();
       const btnRect = noBtn.getBoundingClientRect();
-      const pad = 10;
+      const pad = 12;
 
       const maxX = areaRect.width - btnRect.width - pad;
       const maxY = areaRect.height - btnRect.height - pad;
@@ -557,6 +576,7 @@
       noBtn.style.position = "absolute";
       noBtn.style.left = `${newX}px`;
       noBtn.style.top  = `${newY}px`;
+      noBtn.style.zIndex = "99999";
     }
 
     noBtn.addEventListener("mouseenter", moveNoButton);
@@ -571,7 +591,7 @@
       launchConfetti();
     });
 
-    // Confetti
+    // Confetti (slower + longer)
     const confettiCanvas = document.getElementById("confetti");
     const ctx = confettiCanvas.getContext("2d");
     let confettiPieces = [];
@@ -587,20 +607,20 @@
     function launchConfetti(){
       confettiCanvas.style.display = "block";
       confettiPieces = [];
-      const count = 180;
+      const count = 140;
 
       for(let i=0;i<count;i++){
         confettiPieces.push({
           x: Math.random()*confettiCanvas.width,
-          y: -20 - Math.random()*confettiCanvas.height*0.3,
+          y: -20 - Math.random()*confettiCanvas.height*0.25,
           r: 2 + Math.random()*4,
-          vx: -1.8 + Math.random()*3.6,
-          vy: 2 + Math.random()*5,
+          vx: -1.2 + Math.random()*2.4,
+          vy: 1.6 + Math.random()*3.2,
         });
       }
 
       const start = performance.now();
-      const duration = 2600;
+      const duration = 4200; // longer
 
       if(confettiAnim) cancelAnimationFrame(confettiAnim);
 
